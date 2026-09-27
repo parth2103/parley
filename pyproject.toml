@@ -1,0 +1,24 @@
+[project]
+name = "parley"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "certifi>=2026.7.22",
+    "fastapi>=0.141.1",
+    "pipecat-ai[anthropic,cartesia,deepgram,elevenlabs,local-smart-turn,silero,webrtc]==1.7.0",
+    "python-dotenv>=1.2.3",
+    "uvicorn[standard]>=0.53.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "pytest-socket>=0.8.1",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["backend/tests"]
+addopts = "--disable-socket --allow-unix-socket"
+pythonpath = ["."]

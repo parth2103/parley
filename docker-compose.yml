@@ -1,0 +1,7 @@
+services:
+  api:
+    build: .
+    env_file: .env
+    # WebRTC uses ephemeral UDP ports. Host networking keeps SDP candidates reachable.
+    # Linux: native. Docker Desktop: enable host networking in Settings > Resources > Network.
+    network_mode: host

@@ -5,3 +5,11 @@ build/
 .env
 .env.local
 *.log
+logs/
+
+.env.*
+!.env.example
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]

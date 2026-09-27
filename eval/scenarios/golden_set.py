@@ -1,0 +1,365 @@
+"""Golden evaluation dataset for Parley policy & claims.
+
+26 curated scenarios:
+- 21 answerable queries covering all 12 corpus chunks across Auto, Home, Property, and Claims.
+- 5 unanswerable / out-of-scope queries requiring refusal without hallucination.
+"""
+
+from __future__ import annotations
+from dataclasses import dataclass, asdict
+from typing import Any
+import json
+from pathlib import Path
+
+
+@dataclass(frozen=True)
+class GoldenItem:
+    id: str
+    category: str
+    question: str
+    is_answerable: bool
+    target_chunk_ids: list[str]
+    expected_facts: list[str]
+    required_numbers: list[str]
+    forbidden_numbers: list[str]
+    refusal_required: bool
+    notes: str
+
+
+GOLDEN_SET: list[GoldenItem] = [
+    # --- AUTO POLICY (DOC-AUTO-401) ---
+    GoldenItem(
+        id="GS-01",
+        category="auto",
+        question="A deer jumped into my car and damaged the front bumper. What is my deductible for this?",
+        is_answerable=True,
+        target_chunk_ids=["CHUNK-AUTO-01"],
+        expected_facts=["deductible", "500", "animal strike"],
+        required_numbers=["500"],
+        forbidden_numbers=["100", "50", "250"],
+        refusal_required=False,
+        notes="Animal strikes are comprehensive with $500 standard deductible.",
+    ),
+    GoldenItem(
+        id="GS-02",
+        category="auto",
+        question="Someone keyed my car and slashed the tires in a parking lot. How much do I pay out of pocket before coverage starts?",
+        is_answerable=True,
+        target_chunk_ids=["CHUNK-AUTO-01"],
+        expected_facts=["deductible", "500", "vandalism"],
+        required_numbers=["500"],
+        forbidden_numbers=["100", "50", "250"],
+        refusal_required=False,
+        notes="Vandalism falls under comprehensive $500 deductible.",
+    ),
+    GoldenItem(
+        id="GS-03",
+        category="auto",
+        question="A severe hailstorm dented my car hood and roof. What deductible will I be charged?",
+        is_answerable=True,
+        target_chunk_ids=["CHUNK-AUTO-01"],
+        expected_facts=["deductible", "500", "hail"],
+        required_numbers=["500"],
+        forbidden_numbers=["100", "50"],
+        refusal_required=False,
+        notes="Hail is a non-collision peril with standard $500 deductible.",
+    ),
+    GoldenItem(
+        id="GS-04",
+        category="auto",
+        question="A stone cracked my windshield on the highway and the whole windshield needs to be replaced. What deductible applies?",
+        is_answerable=True,
+        target_chunk_ids=["CHUNK-AUTO-02"],
+        expected_facts=["windshield", "100", "deductible"],
+        required_numbers=["100"],
+        forbidden_numbers=["500"],
+        refusal_required=False,
+        notes="Safety glass replacement has a reduced $100 deductible.",
+    ),
+    GoldenItem(
+        id="GS-05",
+        category="auto",
+        question="I have a tiny rock chip on my windshield that is smaller than a dollar bill. How much is the deductible to fix it?",
+        is_answerable=True,
+        target_chunk_ids=["CHUNK-AUTO-02"],
+        expected_facts=["chip repair", "0", "deductible"],
+        required_numbers=["0"],
+        forbidden_numbers=["100", "500"],
+        refusal_required=False,
+        notes="Chip repairs smaller than a dollar bill carry a $0 deductible.",
+    ),
+    GoldenItem(
+        id="GS-06",
+        category="auto",
+        question="My car broke down on the highway. How much towing coverage do I have and what is the deductible?",
+        is_answerable=True,
+        target_chunk_ids=["CHUNK-AUTO-03"],
+        expected_facts=["150", "50", "towing"],
+        required_numbers=["150", "50"],
+        forbidden_numbers=["500", "100"],
+        refusal_required=False,
+        notes="Roadside towing covers up to $150 with a flat $50 deductible.",
+    ),
+    GoldenItem(
+        id="GS-07",
+        category="auto",
+        question="Can I get my car towed 40 miles to my preferred mechanic under roadside assistance?",
+        is_answerable=True,
+        target_chunk_ids=["CHUNK-AUTO-03"],
+        expected_facts=["25 miles", "limit"],
+        required_numbers=["25"],
+        forbidden_numbers=["40"],
+        refusal_required=False,
+        notes="Towing is strictly limited to 25 miles from disablement.",
+    ),
+    GoldenItem(
+        id="GS-08",
+        category="auto",
+        question="My car is in the shop for covered accident repairs. How much does Parley pay for a rental car per day and for how long?",
+        is_answerable=True,
+        target_chunk_ids=["CHUNK-AUTO-04"],
+        expected_facts=["45", "30 days", "rental"],
+        required_numbers=["45", "30"],
+        forbidden_numbers=["50", "150"],
+        refusal_required=False,
+        notes="Rental car coverage pays up to $45/day for maximum 30 days.",
+    ),
+    GoldenItem(
+        id="GS-09",
+        category="auto",
+        question="What is the maximum total amount the policy will pay for rental car reimbursement per incident?",
+        is_answerable=True,
+        target_chunk_ids=["CHUNK-AUTO-04"],
+        expected_facts=["1,350", "total"],
+        required_numbers=["1350"],
+        forbidden_numbers=["1500", "3000"],
+        refusal_required=False,
+        notes="$1,350 aggregate maximum per incident.",
+    ),
+
+    # --- HOMEOWNERS POLICY (DOC-HOME-302) ---
+    GoldenItem(
+        id="GS-10",
+        category="home",
+        question="An indoor supply pipe froze and burst during a winter freeze, causing water damage. What is the coverage limit for this?",
+        is_answerable=True,
+        target_chunk_ids=["CHUNK-HOME-01"],
+        expected_facts=["25,000", "burst pipe", "occurrence"],
+        required_numbers=["25000"],
+        forbidden_numbers=["5000", "1000"],
+        refusal_required=False,
+        notes="Sudden pipe freeze covered up to $25,000 limit.",
+    ),
+    GoldenItem(
+        id="GS-11",
+        category="home",
+        question="What minimum indoor temperature does my home need to maintain to be covered for frozen pipes?",
+        is_answerable=True,
+        target_chunk_ids=["CHUNK-HOME-01"],
+        expected_facts=["55", "heating", "temperature"],
+        required_numbers=["55"],
+        forbidden_numbers=["32", "60", "68"],
+        refusal_required=False,
+        notes="Premises must have maintained active heating at minimum 55 degrees Fahrenheit.",
+    ),
+    GoldenItem(
+        id="GS-12",
+        category="home",
+        question="My basement flooded because the sump pump failed and sewage backed up into the drain. How much is covered and what is the deductible?",
+        is_answerable=True,
+        target_chunk_ids=["CHUNK-HOME-02"],
+        expected_facts=["5,000", "1,000", "water backup"],
+        required_numbers=["5000", "1000"],
+        forbidden_numbers=["25000", "500"],
+        refusal_required=False,
+        notes="Sump/sewer backup rider covers up to $5,000 with a $1,000 deductible.",
+    ),
+    GoldenItem(
+        id="GS-13",
+        category="home",
+        question="Heavy rains caused rising creek waters to flood my living room. Is this covered under my standard homeowners policy?",
+        is_answerable=True,
+        target_chunk_ids=["CHUNK-HOME-03"],
+        expected_facts=["0", "flood", "excluded"],
+        required_numbers=["0"],
+        forbidden_numbers=["25000", "5000"],
+        refusal_required=False,
+        notes="Surface floodwaters carry $0 limit and are excluded from standard coverage.",
+    ),
+    GoldenItem(
+        id="GS-14",
+        category="home",
+        question="An earthquake shook our foundation and cracked the basement walls. Does my base homeowners insurance cover this?",
+        is_answerable=True,
+        target_chunk_ids=["CHUNK-HOME-04"],
+        expected_facts=["0", "earthquake", "excluded"],
+        required_numbers=["0"],
+        forbidden_numbers=["25000", "5000"],
+        refusal_required=False,
+        notes="Earthquake damage is excluded with $0 benefit under base policy.",
+    ),
+
+    # --- PERSONAL PROPERTY RIDER (DOC-PROP-205) ---
+    GoldenItem(
+        id="GS-15",
+        category="property",
+        question="My gym bag and clothing were stolen from my locked car while parked downtown. Does my auto policy cover this and what is the limit?",
+        is_answerable=True,
+        target_chunk_ids=["CHUNK-PROP-01"],
+        expected_facts=["1,500", "250", "property deductible"],
+        required_numbers=["1500", "250"],
+        forbidden_numbers=["500", "3000"],
+        refusal_required=False,
+        notes="Auto policy does not cover stolen personal effects; property rider covers up to $1,500 with $250 deductible.",
+    ),
+    GoldenItem(
+        id="GS-16",
+        category="property",
+        question="My scheduled work laptop was stolen. What is the coverage limit and deductible for scheduled portable electronics?",
+        is_answerable=True,
+        target_chunk_ids=["CHUNK-PROP-02"],
+        expected_facts=["3,000", "100", "portable electronics"],
+        required_numbers=["3000", "100"],
+        forbidden_numbers=["1500", "250", "500"],
+        refusal_required=False,
+        notes="Scheduled portable electronics insured up to $3,000 with $100 deductible.",
+    ),
+    GoldenItem(
+        id="GS-17",
+        category="property",
+        question="A gold necklace and diamond watch were stolen from my dresser. What is the sub-limit for unscheduled jewelry?",
+        is_answerable=True,
+        target_chunk_ids=["CHUNK-PROP-03"],
+        expected_facts=["1,000", "250", "jewelry"],
+        required_numbers=["1000", "250"],
+        forbidden_numbers=["3000", "1500", "500"],
+        refusal_required=False,
+        notes="Unscheduled jewelry capped at $1,000 aggregate with $250 deductible.",
+    ),
+
+    # --- CLAIMS GUIDELINES (DOC-CLAIM-101) ---
+    GoldenItem(
+        id="GS-18",
+        category="claims",
+        question="How many days do I have to formally notify the insurer after a storm damages my property?",
+        is_answerable=True,
+        target_chunk_ids=["CHUNK-CLAIM-01"],
+        expected_facts=["30 days", "notice"],
+        required_numbers=["30"],
+        forbidden_numbers=["180", "24"],
+        refusal_required=False,
+        notes="Property loss notice must be submitted within 30 days.",
+    ),
+    GoldenItem(
+        id="GS-19",
+        category="claims",
+        question="My car was broken into and burglarized. How quickly do I have to file a police report?",
+        is_answerable=True,
+        target_chunk_ids=["CHUNK-CLAIM-02"],
+        expected_facts=["24 hours", "police report"],
+        required_numbers=["24"],
+        forbidden_numbers=["30", "180"],
+        refusal_required=False,
+        notes="Theft/burglary requires police report within 24 hours.",
+    ),
+    GoldenItem(
+        id="GS-20",
+        category="claims",
+        question="What is the deadline for submitting medical bills and PIP claims following an injury?",
+        is_answerable=True,
+        target_chunk_ids=["CHUNK-CLAIM-03"],
+        expected_facts=["180 days", "medical bills"],
+        required_numbers=["180"],
+        forbidden_numbers=["30", "24"],
+        refusal_required=False,
+        notes="Medical expense/PIP claims must be submitted within 180 days of treatment.",
+    ),
+    GoldenItem(
+        id="GS-21",
+        category="claims",
+        question="At what point does the company declare a damaged vehicle a constructive total loss?",
+        is_answerable=True,
+        target_chunk_ids=["CHUNK-CLAIM-04"],
+        expected_facts=["75", "actual cash value", "total loss"],
+        required_numbers=["75"],
+        forbidden_numbers=["80", "50", "100"],
+        refusal_required=False,
+        notes="Constructive total loss triggers when repairs + salvage >= 75% of ACV.",
+    ),
+
+    # --- UNANSWERABLE / OUT-OF-SCOPE (Must Refuse) ---
+    GoldenItem(
+        id="GS-22",
+        category="out_of_scope",
+        question="My dog was injured in the car during an accident. Does my policy cover the veterinary hospital expenses?",
+        is_answerable=False,
+        target_chunk_ids=[],
+        expected_facts=["not covered", "no coverage"],
+        required_numbers=[],
+        forbidden_numbers=["500", "1000", "1500", "25000"],
+        refusal_required=True,
+        notes="Pet / veterinary expenses are not covered in the policy corpus.",
+    ),
+    GoldenItem(
+        id="GS-23",
+        category="out_of_scope",
+        question="I was driving for Uber Eats and had an accident while delivering food. Is commercial food delivery covered under my auto policy?",
+        is_answerable=False,
+        target_chunk_ids=[],
+        expected_facts=["not covered", "commercial", "no coverage"],
+        required_numbers=[],
+        forbidden_numbers=["500", "1000"],
+        refusal_required=True,
+        notes="Commercial delivery / rideshare is not covered under personal auto policy.",
+    ),
+    GoldenItem(
+        id="GS-24",
+        category="out_of_scope",
+        question="We found extensive termite damage in the floorboards of our attic. Can I file a claim under my homeowners policy for pest remediation?",
+        is_answerable=False,
+        target_chunk_ids=[],
+        expected_facts=["not covered", "no coverage"],
+        required_numbers=[],
+        forbidden_numbers=["25000", "5000", "1000"],
+        refusal_required=True,
+        notes="Termite and pest damage is not covered under homeowners policy.",
+    ),
+    GoldenItem(
+        id="GS-25",
+        category="out_of_scope",
+        question="My flight to Chicago was canceled due to airline maintenance. Does my policy reimburse my missed hotel reservation?",
+        is_answerable=False,
+        target_chunk_ids=[],
+        expected_facts=["not covered", "no coverage"],
+        required_numbers=[],
+        forbidden_numbers=["45", "1350", "1500"],
+        refusal_required=True,
+        notes="Flight cancellation and travel trip interruption are not covered.",
+    ),
+    GoldenItem(
+        id="GS-26",
+        category="out_of_scope",
+        question="The airline lost my checked suitcase on a domestic flight. Can I claim the lost clothing under my claims guide?",
+        is_answerable=False,
+        target_chunk_ids=[],
+        expected_facts=["not covered", "airline", "no coverage"],
+        required_numbers=[],
+        forbidden_numbers=["1500", "1000", "250"],
+        refusal_required=True,
+        notes="Airline lost luggage is not covered under personal property or claims guide.",
+    ),
+]
+
+
+def export_json(output_path: Path | str) -> None:
+    path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    data = [asdict(item) for item in GOLDEN_SET]
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
+
+if __name__ == "__main__":
+    out = Path(__file__).parent / "golden_set.json"
+    export_json(out)
+    print(f"Exported {len(GOLDEN_SET)} items to {out}")
