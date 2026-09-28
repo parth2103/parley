@@ -1,12 +1,16 @@
-"""Print Pipecat measurements and the lifecycle around each measured turn."""
-
+import time
 from loguru import logger
 from pipecat.frames.frames import (
+    AudioRawFrame,
     CancelFrame,
     EndFrame,
     ErrorFrame,
     MetricsFrame,
+    OutputAudioRawFrame,
+    TTSAudioRawFrame,
     UserStartedSpeakingFrame,
+    UserStoppedSpeakingFrame,
+    VADUserStoppedSpeakingFrame,
 )
 from pipecat.metrics.metrics import TTFAMetricsData, TTFBMetricsData
 from pipecat.observers.base_observer import BaseObserver, FramePushed
@@ -20,6 +24,8 @@ class StageMetricsObserver(BaseObserver):
         super().__init__()
         self.session = session
         self._last_start = None
+        self._user_speech_end_ts: float | None = None
+        self._first_audio_ts: float | None = None
         self._lifecycle = TurnLifecycle(session, logger.info)
 
     @property
@@ -37,8 +43,33 @@ class StageMetricsObserver(BaseObserver):
             and frame.id != self._last_start
         ):
             self._last_start = frame.id
+            self._user_speech_end_ts = None
+            self._first_audio_ts = None
             self._lifecycle.start()
             return
+
+        if isinstance(frame, (VADUserStoppedSpeakingFrame, UserStoppedSpeakingFrame)):
+            if self._user_speech_end_ts is None and not self._lifecycle.closed:
+                self._user_speech_end_ts = time.perf_counter()
+                logger.info(
+                    "session={} turn={} event=user_speech_stopped timestamp={:.6f}",
+                    self.session, self.turn, self._user_speech_end_ts,
+                )
+            return
+
+        if (
+            isinstance(frame, (TTSAudioRawFrame, OutputAudioRawFrame, AudioRawFrame))
+            and data.direction == FrameDirection.DOWNSTREAM
+            and getattr(data.source, "name", "") == "TTS"
+        ):
+            if self._first_audio_ts is None and self._user_speech_end_ts is not None and not self._lifecycle.closed:
+                self._first_audio_ts = time.perf_counter()
+                true_v2v = self._first_audio_ts - self._user_speech_end_ts
+                self._lifecycle.record_true_v2v(true_v2v)
+                logger.info(
+                    "session={} turn={} stage=TRUE_V2V method=direct_timestamp true_v2v_s={:.6f}",
+                    self.session, self.turn, true_v2v,
+                )
         if isinstance(frame, ErrorFrame) and not self._lifecycle.closed:
             processor = frame.processor.name if frame.processor else data.source.name
             self._lifecycle.record_error(processor, frame.fatal)

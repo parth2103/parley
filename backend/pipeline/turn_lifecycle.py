@@ -13,14 +13,19 @@ class TurnLifecycle:
         self.reported: set[str] = set()
         self.closed = True
         self.last_error: str | None = None
+        self.true_v2v_s: float | None = None
 
     def start(self) -> None:
         self.close_incomplete("superseded_by_next_turn")
         self.turn += 1
         self.reported.clear()
         self.last_error = None
+        self.true_v2v_s = None
         self.closed = False
         self.emit(f"session={self.session} turn={self.turn} event=turn_start")
+
+    def record_true_v2v(self, v2v_s: float) -> None:
+        self.true_v2v_s = v2v_s
 
     def record_error(self, processor: str, fatal: bool) -> None:
         severity = "fatal" if fatal else "nonfatal"
@@ -33,7 +38,8 @@ class TurnLifecycle:
             return
         self.reported.add(stage)
         if self.reported == STAGES:
-            self.emit(f"session={self.session} turn={self.turn} event=turn_complete")
+            v2v_str = f" true_v2v_s={self.true_v2v_s:.6f}" if self.true_v2v_s is not None else ""
+            self.emit(f"session={self.session} turn={self.turn} event=turn_complete{v2v_str}")
             self.closed = True
 
     def expects_stage(self, stage: str) -> bool:
