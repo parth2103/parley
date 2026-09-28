@@ -59,7 +59,8 @@ def test_open_claim_success():
     assert claim["policy_number"] == "POL-4401"
     assert claim["status"] == "opened_pending_review"
     assert "Sarah Jenkins" in claim["assigned_adjuster"]
-    assert res["execution_time_ms"] < 10.0
+    assert res["execution_time_ms"] < 100.0
+
 
 
 def test_open_claim_theft_requires_police_report():

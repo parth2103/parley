@@ -1,6 +1,8 @@
-"""Evaluate hybrid retrieval on 10 known-answer questions.
+"""Evaluate BM25 + hashed n-gram retriever on known-answer policy questions.
 
-Measures exact Recall@3 and Recall@5 against numerical trap chunks.
+Measures exact Recall@1, Recall@3, and Recall@5 on:
+1. Canonical known-answer questions (n=10)
+2. Grown golden evaluation dataset (n=29 answerable items) with lexical gaps and conversational phrasing.
 """
 
 from __future__ import annotations
@@ -12,7 +14,8 @@ import sys
 # Ensure repository root is on sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from backend.rag.retriever import HybridRetriever
+from backend.rag.retriever import BM25HashedNgramRetriever, HybridRetriever
+from eval.scenarios.golden_set import GOLDEN_SET
 
 
 @dataclass(frozen=True)
@@ -99,11 +102,14 @@ EVAL_ITEMS: list[KnownAnswerEvalItem] = [
 
 
 def run_eval():
-    retriever = HybridRetriever()
-    print("=" * 65)
-    print("HYBRID RETRIEVAL EVALUATION (n=10 known-answer questions)")
-    print("=" * 65)
+    retriever = BM25HashedNgramRetriever()
+    print("=" * 70)
+    print("BM25 + HASHED N-GRAM RETRIEVER EVALUATION")
+    print("=" * 70)
 
+    # 1. Canonical known-answer items
+    print(f"\n--- Part 1: Canonical Known-Answer Set (n={len(EVAL_ITEMS)}) ---")
+    hits_at_1 = 0
     hits_at_3 = 0
     hits_at_5 = 0
 
@@ -111,30 +117,80 @@ def run_eval():
         results_5 = retriever.retrieve(item.query, top_k=5)
         top_ids_5 = [chunk.chunk_id for chunk, _ in results_5]
         top_ids_3 = top_ids_5[:3]
+        top_id_1 = top_ids_5[0] if top_ids_5 else ""
 
+        hit_1 = item.target_chunk_id == top_id_1
         hit_3 = item.target_chunk_id in top_ids_3
         hit_5 = item.target_chunk_id in top_ids_5
 
+        if hit_1:
+            hits_at_1 += 1
         if hit_3:
             hits_at_3 += 1
         if hit_5:
             hits_at_5 += 1
 
         rank = (top_ids_5.index(item.target_chunk_id) + 1) if hit_5 else ">5"
-        status = "PASS (top-3)" if hit_3 else ("PASS (top-5)" if hit_5 else "FAIL")
+        status = "PASS (top-1)" if hit_1 else ("PASS (top-3)" if hit_3 else ("PASS (top-5)" if hit_5 else "FAIL"))
         print(f"[{item.query_id}] Target: {item.target_chunk_id} | Rank: {rank} | Status: {status}")
-        print(f"       Query: {item.query}")
-        print(f"       Top 3: {top_ids_3}\n")
 
-    recall_at_3 = hits_at_3 / len(EVAL_ITEMS)
-    recall_at_5 = hits_at_5 / len(EVAL_ITEMS)
+    canon_r1 = hits_at_1 / len(EVAL_ITEMS)
+    canon_r3 = hits_at_3 / len(EVAL_ITEMS)
+    canon_r5 = hits_at_5 / len(EVAL_ITEMS)
+    print(f"Canonical Recall@1: {canon_r1:.4f} ({hits_at_1}/{len(EVAL_ITEMS)})")
+    print(f"Canonical Recall@3: {canon_r3:.4f} ({hits_at_3}/{len(EVAL_ITEMS)})")
+    print(f"Canonical Recall@5: {canon_r5:.4f} ({hits_at_5}/{len(EVAL_ITEMS)})")
 
-    print("=" * 65)
-    print(f"Recall@3: {recall_at_3:.4f} ({hits_at_3}/{len(EVAL_ITEMS)})")
-    print(f"Recall@5: {recall_at_5:.4f} ({hits_at_5}/{len(EVAL_ITEMS)})")
-    print("=" * 65)
-    return recall_at_3, recall_at_5
+    # 2. Grown Golden Set (all answerable items)
+    answerable_items = [item for item in GOLDEN_SET if item.is_answerable]
+    print(f"\n--- Part 2: Grown Golden Evaluation Set (n={len(answerable_items)} answerable items) ---")
+    g_hits_at_1 = 0
+    g_hits_at_3 = 0
+    g_hits_at_5 = 0
+
+    misses_at_3: list[tuple[str, str, list[str], list[str]]] = []
+
+    for item in answerable_items:
+        results_5 = retriever.retrieve(item.question, top_k=5)
+        top_ids_5 = [chunk.chunk_id for chunk, _ in results_5]
+        top_ids_3 = top_ids_5[:3]
+        top_id_1 = top_ids_5[0] if top_ids_5 else ""
+
+        hit_1 = any(t == top_id_1 for t in item.target_chunk_ids)
+        hit_3 = any(t in top_ids_3 for t in item.target_chunk_ids)
+        hit_5 = any(t in top_ids_5 for t in item.target_chunk_ids)
+
+        if hit_1:
+            g_hits_at_1 += 1
+        if hit_3:
+            g_hits_at_3 += 1
+        if hit_5:
+            g_hits_at_5 += 1
+
+        if not hit_3:
+            misses_at_3.append((item.id, item.question, item.target_chunk_ids, top_ids_3))
+
+    g_r1 = g_hits_at_1 / len(answerable_items)
+    g_r3 = g_hits_at_3 / len(answerable_items)
+    g_r5 = g_hits_at_5 / len(answerable_items)
+
+    print(f"Grown Golden Set Recall@1: {g_r1:.4f} ({g_hits_at_1}/{len(answerable_items)})")
+    print(f"Grown Golden Set Recall@3: {g_r3:.4f} ({g_hits_at_3}/{len(answerable_items)})")
+    print(f"Grown Golden Set Recall@5: {g_r5:.4f} ({g_hits_at_5}/{len(answerable_items)})")
+
+    if misses_at_3:
+        print(f"\nItems missing top-3 (demonstrating eval is discriminative / off ceiling):")
+        for qid, qtext, targets, top3 in misses_at_3:
+            print(f"  [{qid}] Targets: {targets} | Top-3: {top3}")
+            print(f"       Query: {qtext}")
+
+    print("=" * 70)
+    return {
+        "canonical": {"r1": canon_r1, "r3": canon_r3, "r5": canon_r5},
+        "grown_golden_set": {"n": len(answerable_items), "r1": g_r1, "r3": g_r3, "r5": g_r5},
+    }
 
 
 if __name__ == "__main__":
     run_eval()
+

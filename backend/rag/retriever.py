@@ -1,6 +1,7 @@
-"""Hybrid retrieval combining Okapi BM25 and Dense Vector Scoring via Reciprocal Rank Fusion.
+"""BM25 + hashed n-gram dense vector retriever via Reciprocal Rank Fusion.
 
-Uses standard Python and NumPy for zero external dependencies.
+Combines Okapi BM25 keyword scoring with subword hashed n-gram dense vector
+cosine similarity using standard Python and NumPy (zero external embedding dependencies).
 """
 
 from __future__ import annotations
@@ -96,7 +97,7 @@ class DenseVectorIndex:
 
 
 class HybridRetriever:
-    """Combines BM25 and dense vectors via Reciprocal Rank Fusion (RRF)."""
+    """BM25 + hashed n-gram dense vector retriever via Reciprocal Rank Fusion (RRF)."""
 
     def __init__(
         self,
@@ -131,3 +132,8 @@ class HybridRetriever:
 
         top_indices = np.argsort(-rrf_scores)[:top_k]
         return [(self.corpus[i], float(rrf_scores[i])) for i in top_indices]
+
+
+# Explicit alias matching stack naming
+BM25HashedNgramRetriever = HybridRetriever
+
