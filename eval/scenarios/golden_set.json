@@ -3,6 +3,7 @@
     "id": "GS-01",
     "category": "auto",
     "question": "A deer jumped into my car and damaged the front bumper. What is my deductible for this?",
+    "style": "clean",
     "is_answerable": true,
     "target_chunk_ids": [
       "CHUNK-AUTO-01"
@@ -27,6 +28,7 @@
     "id": "GS-02",
     "category": "auto",
     "question": "Someone keyed my car and slashed the tires in a parking lot. How much do I pay out of pocket before coverage starts?",
+    "style": "paraphrase",
     "is_answerable": true,
     "target_chunk_ids": [
       "CHUNK-AUTO-01"
@@ -51,6 +53,7 @@
     "id": "GS-03",
     "category": "auto",
     "question": "A severe hailstorm dented my car hood and roof. What deductible will I be charged?",
+    "style": "clean",
     "is_answerable": true,
     "target_chunk_ids": [
       "CHUNK-AUTO-01"
@@ -74,6 +77,7 @@
     "id": "GS-04",
     "category": "auto",
     "question": "A stone cracked my windshield on the highway and the whole windshield needs to be replaced. What deductible applies?",
+    "style": "clean",
     "is_answerable": true,
     "target_chunk_ids": [
       "CHUNK-AUTO-02"
@@ -96,6 +100,7 @@
     "id": "GS-05",
     "category": "auto",
     "question": "I have a tiny rock chip on my windshield that is smaller than a dollar bill. How much is the deductible to fix it?",
+    "style": "clean",
     "is_answerable": true,
     "target_chunk_ids": [
       "CHUNK-AUTO-02"
@@ -119,6 +124,7 @@
     "id": "GS-06",
     "category": "auto",
     "question": "My car broke down on the highway. How much towing coverage do I have and what is the deductible?",
+    "style": "clean",
     "is_answerable": true,
     "target_chunk_ids": [
       "CHUNK-AUTO-03"
@@ -143,6 +149,7 @@
     "id": "GS-07",
     "category": "auto",
     "question": "Can I get my car towed 40 miles to my preferred mechanic under roadside assistance?",
+    "style": "paraphrase",
     "is_answerable": true,
     "target_chunk_ids": [
       "CHUNK-AUTO-03"
@@ -154,16 +161,15 @@
     "required_numbers": [
       "25"
     ],
-    "forbidden_numbers": [
-      "40"
-    ],
+    "forbidden_numbers": [],
     "refusal_required": false,
-    "notes": "Towing is strictly limited to 25 miles from disablement."
+    "notes": "Towing is strictly limited to 25 miles from disablement. 40 in prompt must not fail forbidden checks."
   },
   {
     "id": "GS-08",
     "category": "auto",
     "question": "My car is in the shop for covered accident repairs. How much does Parley pay for a rental car per day and for how long?",
+    "style": "clean",
     "is_answerable": true,
     "target_chunk_ids": [
       "CHUNK-AUTO-04"
@@ -188,6 +194,7 @@
     "id": "GS-09",
     "category": "auto",
     "question": "What is the maximum total amount the policy will pay for rental car reimbursement per incident?",
+    "style": "clean",
     "is_answerable": true,
     "target_chunk_ids": [
       "CHUNK-AUTO-04"
@@ -210,6 +217,7 @@
     "id": "GS-10",
     "category": "home",
     "question": "An indoor supply pipe froze and burst during a winter freeze, causing water damage. What is the coverage limit for this?",
+    "style": "clean",
     "is_answerable": true,
     "target_chunk_ids": [
       "CHUNK-HOME-01"
@@ -233,6 +241,7 @@
     "id": "GS-11",
     "category": "home",
     "question": "What minimum indoor temperature does my home need to maintain to be covered for frozen pipes?",
+    "style": "clean",
     "is_answerable": true,
     "target_chunk_ids": [
       "CHUNK-HOME-01"
@@ -257,6 +266,7 @@
     "id": "GS-12",
     "category": "home",
     "question": "My basement flooded because the sump pump failed and sewage backed up into the drain. How much is covered and what is the deductible?",
+    "style": "clean",
     "is_answerable": true,
     "target_chunk_ids": [
       "CHUNK-HOME-02"
@@ -281,6 +291,7 @@
     "id": "GS-13",
     "category": "home",
     "question": "Heavy rains caused rising creek waters to flood my living room. Is this covered under my standard homeowners policy?",
+    "style": "clean",
     "is_answerable": true,
     "target_chunk_ids": [
       "CHUNK-HOME-03"
@@ -304,6 +315,7 @@
     "id": "GS-14",
     "category": "home",
     "question": "An earthquake shook our foundation and cracked the basement walls. Does my base homeowners insurance cover this?",
+    "style": "clean",
     "is_answerable": true,
     "target_chunk_ids": [
       "CHUNK-HOME-04"
@@ -327,6 +339,7 @@
     "id": "GS-15",
     "category": "property",
     "question": "My gym bag and clothing were stolen from my locked car while parked downtown. Does my auto policy cover this and what is the limit?",
+    "style": "clean",
     "is_answerable": true,
     "target_chunk_ids": [
       "CHUNK-PROP-01"
@@ -351,6 +364,7 @@
     "id": "GS-16",
     "category": "property",
     "question": "My scheduled work laptop was stolen. What is the coverage limit and deductible for scheduled portable electronics?",
+    "style": "clean",
     "is_answerable": true,
     "target_chunk_ids": [
       "CHUNK-PROP-02"
@@ -376,6 +390,7 @@
     "id": "GS-17",
     "category": "property",
     "question": "A gold necklace and diamond watch were stolen from my dresser. What is the sub-limit for unscheduled jewelry?",
+    "style": "clean",
     "is_answerable": true,
     "target_chunk_ids": [
       "CHUNK-PROP-03"
@@ -401,6 +416,7 @@
     "id": "GS-18",
     "category": "claims",
     "question": "How many days do I have to formally notify the insurer after a storm damages my property?",
+    "style": "clean",
     "is_answerable": true,
     "target_chunk_ids": [
       "CHUNK-CLAIM-01"
@@ -423,6 +439,7 @@
     "id": "GS-19",
     "category": "claims",
     "question": "My car was broken into and burglarized. How quickly do I have to file a police report?",
+    "style": "clean",
     "is_answerable": true,
     "target_chunk_ids": [
       "CHUNK-CLAIM-02"
@@ -445,6 +462,7 @@
     "id": "GS-20",
     "category": "claims",
     "question": "What is the deadline for submitting medical bills and PIP claims following an injury?",
+    "style": "clean",
     "is_answerable": true,
     "target_chunk_ids": [
       "CHUNK-CLAIM-03"
@@ -467,6 +485,7 @@
     "id": "GS-21",
     "category": "claims",
     "question": "At what point does the company declare a damaged vehicle a constructive total loss?",
+    "style": "clean",
     "is_answerable": true,
     "target_chunk_ids": [
       "CHUNK-CLAIM-04"
@@ -491,6 +510,7 @@
     "id": "GS-22",
     "category": "out_of_scope",
     "question": "My dog was injured in the car during an accident. Does my policy cover the veterinary hospital expenses?",
+    "style": "clean",
     "is_answerable": false,
     "target_chunk_ids": [],
     "expected_facts": [
@@ -511,6 +531,7 @@
     "id": "GS-23",
     "category": "out_of_scope",
     "question": "I was driving for Uber Eats and had an accident while delivering food. Is commercial food delivery covered under my auto policy?",
+    "style": "clean",
     "is_answerable": false,
     "target_chunk_ids": [],
     "expected_facts": [
@@ -530,6 +551,7 @@
     "id": "GS-24",
     "category": "out_of_scope",
     "question": "We found extensive termite damage in the floorboards of our attic. Can I file a claim under my homeowners policy for pest remediation?",
+    "style": "clean",
     "is_answerable": false,
     "target_chunk_ids": [],
     "expected_facts": [
@@ -549,6 +571,7 @@
     "id": "GS-25",
     "category": "out_of_scope",
     "question": "My flight to Chicago was canceled due to airline maintenance. Does my policy reimburse my missed hotel reservation?",
+    "style": "clean",
     "is_answerable": false,
     "target_chunk_ids": [],
     "expected_facts": [
@@ -568,6 +591,7 @@
     "id": "GS-26",
     "category": "out_of_scope",
     "question": "The airline lost my checked suitcase on a domestic flight. Can I claim the lost clothing under my claims guide?",
+    "style": "clean",
     "is_answerable": false,
     "target_chunk_ids": [],
     "expected_facts": [
@@ -583,5 +607,104 @@
     ],
     "refusal_required": true,
     "notes": "Airline lost luggage is not covered under personal property or claims guide."
+  },
+  {
+    "id": "GS-27",
+    "category": "multi_chunk",
+    "question": "Someone smashed my car window and stole my scheduled company laptop from the passenger seat. Does auto cover it, and what is the deductible and coverage limit?",
+    "style": "multi_chunk",
+    "is_answerable": true,
+    "target_chunk_ids": [
+      "CHUNK-PROP-01",
+      "CHUNK-PROP-02"
+    ],
+    "expected_facts": [
+      "property rider",
+      "3,000",
+      "100",
+      "auto does not cover"
+    ],
+    "required_numbers": [
+      "3000",
+      "100"
+    ],
+    "forbidden_numbers": [
+      "500"
+    ],
+    "refusal_required": false,
+    "notes": "Requires synthesizing CHUNK-PROP-01 (auto excludes personal property) and CHUNK-PROP-02 (scheduled electronics $3k limit, $100 deductible). Auto $500 deductible must NOT be applied to laptop."
+  },
+  {
+    "id": "GS-28",
+    "category": "multi_chunk",
+    "question": "During a severe freeze, our basement pipes burst and the sump pump also overflowed. How much total maximum coverage do we have between pipe freeze and the sewer backup rider?",
+    "style": "multi_chunk",
+    "is_answerable": true,
+    "target_chunk_ids": [
+      "CHUNK-HOME-01",
+      "CHUNK-HOME-02"
+    ],
+    "expected_facts": [
+      "25,000",
+      "5,000",
+      "pipe freeze",
+      "water backup"
+    ],
+    "required_numbers": [
+      "25000",
+      "5000"
+    ],
+    "forbidden_numbers": [
+      "500",
+      "1500"
+    ],
+    "refusal_required": false,
+    "notes": "Requires combining pipe freeze ($25k limit) and sewer backup rider ($5k limit)."
+  },
+  {
+    "id": "GS-29",
+    "category": "noisy_asr",
+    "question": "Uh yeah hi, so like my car basically broke down on interstate 55 um about 30 miles out... can you guys tow it the full 30 miles to my brother's repair shop or what?",
+    "style": "noisy_asr",
+    "is_answerable": true,
+    "target_chunk_ids": [
+      "CHUNK-AUTO-03"
+    ],
+    "expected_facts": [
+      "25 miles",
+      "150",
+      "50",
+      "exceeds"
+    ],
+    "required_numbers": [
+      "25"
+    ],
+    "forbidden_numbers": [],
+    "refusal_required": false,
+    "notes": "ASR noisy phrasing with conversational fillers. Towing limit is strictly 25 miles."
+  },
+  {
+    "id": "GS-30",
+    "category": "noisy_asr",
+    "question": "Hey someone smashed into my rear quarter panel in a hit and run while I was parked at the grocery store, how long do I have to call the cops and get a police report number?",
+    "style": "noisy_asr",
+    "is_answerable": true,
+    "target_chunk_ids": [
+      "CHUNK-CLAIM-02"
+    ],
+    "expected_facts": [
+      "24 hours",
+      "police report",
+      "hit-and-run"
+    ],
+    "required_numbers": [
+      "24"
+    ],
+    "forbidden_numbers": [
+      "30",
+      "180"
+    ],
+    "refusal_required": false,
+    "notes": "ASR noisy phrasing for hit-and-run police report deadline (24 hours, not 30 days)."
   }
 ]
