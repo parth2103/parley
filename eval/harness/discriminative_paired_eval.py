@@ -381,7 +381,7 @@ async def run_discriminative_benchmark(k_samples: int = 3) -> dict[str, Any]:
         items_summary.append(summary)
 
         print(
-            f"[{item_idx:02d}/30] {item.id} ({item.style:11}) | "
+            f"[{item_idx:02d}/{len(GOLDEN_SET)}] {item.id} ({item.style:11}) | "
             f"Groq: Corr={g_item_corr:.2f}, TTFT={summary.groq_mean_ttft:.3f}s | "
             f"Claude: Corr={c_item_corr:.2f}, TTFT={summary.claude_mean_ttft:.3f}s"
         )
@@ -391,17 +391,27 @@ async def run_discriminative_benchmark(k_samples: int = 3) -> dict[str, Any]:
     answerable_items = [it for it in items_summary if it.is_answerable]
     unanswerable_items = [it for it in items_summary if not it.is_answerable]
 
-    # Task Correctness (on answerable items, 24 items x 3 = 72 evaluations)
+    # Task Correctness (on answerable items)
     g_all_corr = [s.is_task_correct for it in answerable_items for s in it.groq_samples]
     c_all_corr = [s.is_task_correct for it in answerable_items for s in it.claude_samples]
     groq_task_corr_rate = sum(1 for x in g_all_corr if x) / len(g_all_corr)
     claude_task_corr_rate = sum(1 for x in c_all_corr if x) / len(c_all_corr)
 
-    # Refusal Accuracy (on unanswerable items, 6 items x 3 = 18 evaluations)
+    # Paired Correctness Difference by Resampling Items (95% Bootstrap CI)
+    item_corr_diffs = [it.claude_task_correctness - it.groq_task_correctness for it in answerable_items]
+    corr_mean_diff, corr_ci_low, corr_ci_high = bootstrap_ci(item_corr_diffs, num_samples=10000)
+
+    # Refusal Accuracy (on unanswerable items)
     g_all_ref = [s.refusal_accurate for it in unanswerable_items for s in it.groq_samples]
     c_all_ref = [s.refusal_accurate for it in unanswerable_items for s in it.claude_samples]
     groq_ref_acc_rate = sum(1 for x in g_all_ref if x) / len(g_all_ref)
     claude_ref_acc_rate = sum(1 for x in c_all_ref if x) / len(c_all_ref)
+
+    # Groundedness (across all items and samples)
+    g_all_grnd = [s.is_grounded for it in items_summary for s in it.groq_samples]
+    c_all_grnd = [s.is_grounded for it in items_summary for s in it.claude_samples]
+    groq_grounded_rate = sum(1 for x in g_all_grnd if x) / len(g_all_grnd)
+    claude_grounded_rate = sum(1 for x in c_all_grnd if x) / len(c_all_grnd)
 
     # Claim check pass rate
     g_claim_passes = [s.claim_check_pass for it in answerable_items for s in it.groq_samples]
@@ -409,7 +419,7 @@ async def run_discriminative_benchmark(k_samples: int = 3) -> dict[str, Any]:
     groq_claim_rate = sum(1 for x in g_claim_passes if x) / len(g_claim_passes)
     claude_claim_rate = sum(1 for x in c_claim_passes if x) / len(c_claim_passes)
 
-    # Latency percentiles across all 90 samples
+    # Latency percentiles across all samples
     g_ttfts = [s.ttft_s for it in items_summary for s in it.groq_samples]
     c_ttfts = [s.ttft_s for it in items_summary for s in it.claude_samples]
     g_totals = [s.total_time_s for it in items_summary for s in it.groq_samples]
@@ -430,6 +440,8 @@ async def run_discriminative_benchmark(k_samples: int = 3) -> dict[str, Any]:
     report = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "total_items": len(items_summary),
+        "answerable_items": len(answerable_items),
+        "unanswerable_items": len(unanswerable_items),
         "k_samples": k_samples,
         "total_queries_per_model": len(items_summary) * k_samples,
         "models": {"groq": GROQ_MODEL, "claude": ANTHROPIC_MODEL, "judge": JUDGE_MODEL},
@@ -438,11 +450,16 @@ async def run_discriminative_benchmark(k_samples: int = 3) -> dict[str, Any]:
                 "groq_mean": groq_task_corr_rate,
                 "claude_mean": claude_task_corr_rate,
                 "delta_claude_minus_groq": claude_task_corr_rate - groq_task_corr_rate,
+                "delta_item_resampled_95ci": [corr_ci_low, corr_ci_high],
             },
             "refusal_accuracy": {
                 "groq_mean": groq_ref_acc_rate,
                 "claude_mean": claude_ref_acc_rate,
                 "delta_claude_minus_groq": claude_ref_acc_rate - groq_ref_acc_rate,
+            },
+            "groundedness": {
+                "groq_mean": groq_grounded_rate,
+                "claude_mean": claude_grounded_rate,
             },
             "claim_level_check_pass_rate": {
                 "groq_mean": groq_claim_rate,
@@ -477,14 +494,17 @@ if __name__ == "__main__":
     rep = asyncio.run(run_discriminative_benchmark(k_samples=3))
     m = rep["metrics"]
     print("\n==================================================================")
-    print("DISCRIMINATIVE PAIRED BENCHMARK RESULTS (k=3, 90 queries / model)")
+    print(f"DISCRIMINATIVE PAIRED BENCHMARK RESULTS (k=3, {rep['total_items']} items, {rep['total_queries_per_model']} queries/model)")
     print("==================================================================")
-    print("1. SEPARATED TASK PERFORMANCE:")
+    print("1. QUALITY & FACTUAL ACCURACY:")
     print(f"  Task Correctness (Answerable): Groq = {m['task_correctness']['groq_mean']:.4f} | Claude = {m['task_correctness']['claude_mean']:.4f}")
+    print(f"  Paired Correctness Delta (Claude - Groq): {m['task_correctness']['delta_claude_minus_groq']:+.4f} [95% Bootstrap CI: {m['task_correctness']['delta_item_resampled_95ci'][0]:+.4f}, {m['task_correctness']['delta_item_resampled_95ci'][1]:+.4f}]")
     print(f"  Refusal Accuracy (Out-of-scope): Groq = {m['refusal_accuracy']['groq_mean']:.4f} | Claude = {m['refusal_accuracy']['claude_mean']:.4f}")
-    print(f"  Claim-Level Check (Qwen Judge):  Groq = {m['claim_level_check_pass_rate']['groq_mean']:.4f} | Claude = {m['claim_level_check_pass_rate']['claude_mean']:.4f}")
-    print("\n2. STREAMING LATENCY (90 samples):")
+    print(f"  Groundedness (Zero Number Hallucinations): Groq = {m['groundedness']['groq_mean']:.4f} | Claude = {m['groundedness']['claude_mean']:.4f}")
+    print(f"  Claim-Level Check (Qwen 3rd-family Judge): Groq = {m['claim_level_check_pass_rate']['groq_mean']:.4f} | Claude = {m['claim_level_check_pass_rate']['claude_mean']:.4f}")
+    print("\n2. STREAMING LATENCY:")
     print(f"  Groq TTFT:   p50={m['ttft']['groq']['p50']:.3f}s | p95={m['ttft']['groq']['p95']:.3f}s")
     print(f"  Claude TTFT: p50={m['ttft']['claude']['p50']:.3f}s | p95={m['ttft']['claude']['p95']:.3f}s")
     print(f"  TTFT Delta (Claude - Groq): {m['ttft']['mean_delta_claude_minus_groq_s']:+.3f}s [95% CI: {m['ttft']['delta_95ci_s'][0]:+.3f}s, {m['ttft']['delta_95ci_s'][1]:+.3f}s]")
     print("==================================================================\n")
+
