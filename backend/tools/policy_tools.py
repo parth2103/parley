@@ -429,3 +429,26 @@ def execute_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
             "error_code": "UNKNOWN_TOOL",
             "execution_time_ms": 0.0,
         }
+
+
+def get_policy_function_schemas():
+    """Return FunctionSchema list with async handlers attached for Pipecat LLMContext."""
+    from pipecat.adapters.schemas.function_schema import FunctionSchema
+
+    async def _async_tool_handler(params):
+        fn_name = params.function_name
+        args = dict(params.arguments)
+        res = execute_tool(fn_name, args)
+        await params.result_callback(res)
+
+    return [
+        FunctionSchema(
+            name=tool["name"],
+            description=tool["description"],
+            properties=tool["parameters"]["properties"],
+            required=tool["parameters"]["required"],
+            handler=_async_tool_handler,
+        )
+        for tool in TOOL_SCHEMAS
+    ]
+

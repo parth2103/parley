@@ -17,8 +17,15 @@ from pipecat.turns.user_turn_strategies import UserTurnStrategies
 
 from backend.pipeline.config import Settings
 from backend.pipeline.metrics import StageMetricsObserver
+from backend.tools.policy_tools import get_policy_function_schemas
 
-SYSTEM_PROMPT = "You are a test voice agent. Keep replies under 2 sentences."
+SYSTEM_PROMPT = (
+    "You are Parley, an AI voice assistant for insurance policy & claims phone lines. "
+    "Keep replies concise and under 2 sentences suitable for natural speech. "
+    "Use policy_lookup to inspect coverage/deductibles, open_claim to initiate FNOL claim filings, "
+    "and schedule_callback to book adjuster callbacks. "
+    "If required details (such as policy number) are missing, ask the user to clarify before calling a tool."
+)
 
 
 def build_pipeline(transport: BaseTransport, settings: Settings, session: str) -> PipelineWorker:
@@ -52,7 +59,8 @@ def build_pipeline(transport: BaseTransport, settings: Settings, session: str) -
             name="TTS", api_key=settings.tts_api_key,
             settings=ElevenLabsTTSService.Settings(model="eleven_flash_v2_5", voice=settings.tts_voice_id),
         )
-    context = LLMContext()
+    tools = get_policy_function_schemas()
+    context = LLMContext(tools=tools)
     aggregators = LLMContextAggregatorPair(
         context,
         user_params=LLMUserAggregatorParams(
