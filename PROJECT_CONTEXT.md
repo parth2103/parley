@@ -17,7 +17,7 @@ against that story, not against "would this be cool to build."
 
 Status:
 - [x] Voice loop built (Pipecat, SmallWebRTC, Deepgram Nova-3, Cartesia TTS)
-- [x] First real latency baseline captured and parsed (n=18, Claude Sonnet 5)
+- [x] First real latency baseline captured and parsed (n=18, Claude Sonnet 4.6 (claude-sonnet-4-6))
 - [ ] LLM TTFB root cause isolated (bare-API diagnostic) — NOT DONE
 - [ ] Groq provider comparison — done but invalid (n=4 vs n=18, unpaired,
       root cause not isolated first) — needs a proper re-run
@@ -64,11 +64,10 @@ approval, regardless of how tempting a detour looks.
 - VAD: Silero, `stop_secs=0.2`
 - Turn detection: Smart Turn v3 (local ONNX)
 - STT: Deepgram Nova-3
-- LLM: **Groq (`openai/gpt-oss-120b`) is primary**, chosen for latency
-  and cost. Claude Sonnet 5 (`claude-sonnet-4-6`) kept behind the same
-  `llm_provider` config as a fallback/comparison path. See Open Questions
-  — the decision is pragmatic, not yet backed by a quality eval.
+- LLM: **Groq (`openai/gpt-oss-120b`) is primary for latency/cost; correctness 0.8133 vs Claude 0.9333 (n=90), under review.** Claude Sonnet 4.6 (`claude-sonnet-4-6`) kept behind the same `llm_provider` config as a fallback/comparison path. See Open Questions.
 - TTS: Cartesia Sonic 3.5 (fallback: ElevenLabs Flash v2.5)
+- Retriever: BM25 + hashed n-gram vectors via RRF (pure Python/NumPy, zero external embedding dependency)
+- Tools: exposed via stdio MCP server; voice pipeline calls the same functions directly via Pipecat FunctionSchema
 
 ## Open questions / unresolved — check before doing related work
 

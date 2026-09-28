@@ -47,5 +47,36 @@ Pipeline: Deepgram Nova-3 STT -> Anthropic Claude Sonnet 4.6 (thinking disabled)
 - **LLM TTFB**: Model request to first streamed response chunk.
 - **TTS TTFB**: Synthesis request to first byte received from Cartesia.
 - **TTS TTFA**: Synthesis request to first audible synthesized audio sample.
-- **Total voice-to-voice**: Summed per-turn stages (STT TTFB + LLM TTFB + TTS TTFA), percentile calculated across turns (not sum of stage percentiles).
+- **Total voice-to-voice (Legacy summed method)**: Summed per-turn stages (STT TTFB + LLM TTFB + TTS TTFA), percentile calculated across turns (not sum of stage percentiles). *Superseded by True Voice-to-Voice.*
 - Incomplete turns (dropped turns) are excluded from percentile calculation and reported separately with error reasons.
+
+## True Voice-to-Voice Baselines (Current Standard)
+
+Defined as timestamp of user speech end (Silero VAD stop) to timestamp of first agent audio frame dispatched to WebRTC transport ($t_{\text{first\_agent\_audio\_frame\_to\_transport}} - t_{\text{user\_speech\_end\_vad\_stop}}$). Captures utterance-boundary evaluation, transport queuing, and inter-stage serialization.
+
+*Note: The earlier summed-stage figures (e.g. Groq p50 = 0.847 s / p95 = 0.979 s; Claude p50 = 1.986 s / p95 = 4.929 s) are superseded by this measurement.*
+
+| Metric | Groq (`openai/gpt-oss-120b`) | Claude Sonnet 4.6 (`claude-sonnet-4-6`) | Delta (Groq vs Claude) [unpaired, directional] |
+| :--- | :--- | :--- | :--- |
+| **Sample Size** | n=18 complete turns | n=18 complete turns | Matched sample count |
+| **True V2V p50** | 1.155 s | 2.611 s | -1.456 s (-55.7%) |
+| **True V2V p90** | 3.329 s | 6.452 s | -3.123 s (-48.4%) |
+| **True V2V p95** | 3.627 s | 7.128 s | -3.501 s (-49.1%) |
+| **Mean** | 1.547 s | 3.097 s | -1.550 s (-50.1%) |
+
+- **Waveform acoustic validation (n=3)**: Software True V2V = 0.819 s – 1.014 s; acoustic waveform gap = 0.950 s – 1.135 s (discrepancy average = 131.15 ms due to Cartesia leading silence in synthesized audio frames).
+
+## Tool-Call Turn Latency (End-to-End Turn Time)
+
+Replaces in-process microsecond execution metrics (which measure only in-memory dictionary lookup, 0.01–2.44 ms) with full turn duration from user prompt through LLM tool call, tool execution, and final spoken response generation.
+
+- **Sample Size**: n=11 cases (10 tool calls + 1 missing-info clarification)
+- **Primary LLM**: Groq `openai/gpt-oss-120b` (Temperature: 0.0)
+- **Tool Selection Accuracy**: 1.0000 (11/11)
+- **Argument Extraction Accuracy**: 1.0000 (10/10)
+- **Missing-Info Clarification Accuracy**: 1.0000 (1/1)
+- **Turn Latency p50**: 837.1 ms (0.837 s)
+- **Turn Latency p90**: 10,966.8 ms (10.967 s) [max of n=11]
+- **Turn Latency p95**: 10,966.8 ms (10.967 s) [max of n=11]
+- **Turn Latency Mean**: 2,621.5 ms (2.622 s)
+
