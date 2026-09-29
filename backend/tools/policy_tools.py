@@ -112,9 +112,8 @@ def policy_lookup(policy_number: str) -> dict[str, Any]:
         }
 
     policy = MOCK_POLICIES.get(p_num)
-    elapsed = (time.perf_counter() - t0) * 1000.0
-
     if not policy:
+        elapsed = (time.perf_counter() - t0) * 1000.0
         return {
             "success": False,
             "error": f"Policy '{p_num}' not found in active records",
@@ -122,9 +121,17 @@ def policy_lookup(policy_number: str) -> dict[str, Any]:
             "execution_time_ms": round(elapsed, 3),
         }
 
+    # RAG retrieval: fetch relevant policy document clauses from corpus
+    from backend.rag.retriever import HybridRetriever
+    retriever = HybridRetriever()
+    retrieved = retriever.retrieve(f"{policy.get('policy_type', '')} {p_num} coverage deductible", top_k=2)
+    retrieved_clauses = [f"[{c.chunk_id}] {c.title}: {c.content}" for c, _ in retrieved]
+
+    elapsed = (time.perf_counter() - t0) * 1000.0
     return {
         "success": True,
         "policy": policy,
+        "retrieved_clauses": retrieved_clauses,
         "execution_time_ms": round(elapsed, 3),
     }
 
@@ -341,7 +348,7 @@ def schedule_callback(
 TOOL_SCHEMAS: list[dict[str, Any]] = [
     {
         "name": "policy_lookup",
-        "description": "Look up active insurance policy details, deductible amounts, coverage limits, and endorsements by policy number.",
+        "description": "Look up active insurance policy details, deductible amounts, coverage limits, and policy clauses by policy number.",
         "parameters": {
             "type": "object",
             "properties": {

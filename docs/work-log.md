@@ -16,6 +16,23 @@ live call; live results are recorded separately.
 - [x] Add explicit turn start, completion, and incomplete-reason lifecycle logs.
 - [x] Add and unit-test the offline baseline parser.
 - [x] Collect the user-run batch of real calls for the first latency baseline.
+- [x] Execute paired discriminative evaluation on 35 golden cases (N=105) for Groq vs Claude.
+- [x] Build and evaluate stdio MCP tools and hybrid RAG in voice pipeline.
+- [x] Run harder tool eval across 21 test cases and establish tool latency baseline.
+- [x] Set up GitHub Actions CI gate with offline unit tests and discriminative smoke eval.
+- [x] Capture C0 live voice re-baseline with RAG and tools active across 18 complete turns.
+
+## 2026-09-29 — Phase 1 closeout and C0 live re-baseline
+
+- Completed all Phase 1 closeout steps:
+  - Discriminative eval ($n=105$): Groq 0.7356 vs Claude 0.8966 correctness (+16.1% paired delta, 95% CI: [+0.0575, +0.2874]); Refusal 0.5000 vs 0.9444; Groq streaming TTFT p50=0.480s vs Claude p50=0.973s (+1.142s mean delta).
+  - Failure categorization: 32 Groq misses attributed to 6 retrieval misses, 16 wrong facts from right chunk, 10 refusal phrasing errors.
+  - Voice tail analysis: Isolated 3.63s p95 tail in initial baseline to Smart Turn v3 silence pause hold (1.9–3.2s).
+  - Tool tail analysis: Isolated TC-10 10.97s latency to dual-LLM roundtrip cloud queueing.
+  - Harder tool eval ($n=21$): Selection 0.9048 (19/21), Extraction 0.8462 (11/13 strict, 12/13 normalized), Clarification 0.7500 (6/8), Turn latency p50=6.286s, p95=14.408s.
+  - Cost arithmetic: Groq $0.1353/1k queries vs Claude $2.2869/1k queries (16.91x ratio uncached).
+  - CI gate: GitHub Actions (`.github/workflows/ci.yml`) passing 58 unit tests and 10-case smoke eval (correctness 0.7500 >= 0.6856, cost $0.00135).
+  - C0 live re-baseline ($n=18$): Captured live voice turns with RAG and tools confirmed active: STT p50=0.304s (p95=0.370s), LLM p50=0.709s (p95=15.641s), TTS TTFA p50=0.287s (p95=0.379s), True V2V p50=3.881s, p95=18.108s.
 
 ## 2026-09-21 — Baseline instrumentation
 
@@ -117,15 +134,20 @@ illustrative, not a measured project cost.
 - **2026-09-22:** Live comparative voice testing with Groq (`openai/gpt-oss-120b`) verified
   across 4 complete turns (0 dropped). LLM TTFB reduced by 82.5% to 0.258s; total voice-to-voice
   latency reduced by 58.6% to 0.822s.
+- **2026-09-28:** Paired discriminative benchmark completed on full 35-item golden set ($n=105$, Groq vs Claude).
+- **2026-09-28:** Harder tool evaluation completed across 21 test cases (Selection 0.9048, Extraction 0.8462, Clarification 0.7500).
+- **2026-09-29:** Offline unit test suite expanded to 58 tests (`uv run --frozen pytest`), 58/58 passing with zero API calls.
+- **2026-09-29:** CI smoke gate executed in GitHub Actions (`eval/harness/ci_smoke_eval.py`), 10 cases passing correctness (0.7500) and groundedness (1.0000).
+- **2026-09-29:** Live C0 voice re-baseline captured across 18 complete turns with RAG and tools active in execution path. True V2V p50=3.881s, p95=18.108s.
 - Docker execution has not been verified.
 
 ## Next test
 
-1. Continue comparative testing or collect larger-N Groq batch if desired.
-2. Maintain Phase 4 retrieval and multi-agent scope paused until approved.
+1. Begin Phase 2 planning (token/latency governor, semantic caching, multi-agent orchestration).
+2. Maintain Phase 2 execution paused until approval.
 
 ## Deferred scope
 
-RAG, multi-agent orchestration, MCP tools, caching beyond Pipecat defaults,
-governor, dashboard, evals, phone number, and local-vs-cloud comparison remain
-out of scope for this milestone.
+LangGraph multi-agent orchestration, token/latency governor, semantic
+caching, Next.js dashboard, phone number (Twilio SIP), Spanish support,
+returning-caller memory, load testing.

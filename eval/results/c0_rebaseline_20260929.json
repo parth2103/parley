@@ -1,0 +1,60 @@
+{
+  "timestamp": "2026-09-29T20:10:00Z",
+  "log_source": "logs/parley_2026-09-29T15-58-29-356068.log",
+  "pipeline_configuration": {
+    "stt": "Deepgram Nova-3",
+    "llm": "Groq openai/gpt-oss-120b",
+    "tts": "Cartesia sonic-3.5",
+    "rag": "BM25 + hashed n-gram hybrid retriever via RRF (active in policy_lookup)",
+    "tools": "policy_lookup, open_claim, schedule_callback (active via Pipecat FunctionSchema)"
+  },
+  "total_complete_turns": 18,
+  "metrics": {
+    "stt": {
+      "p50": 0.304,
+      "p90": 0.368,
+      "p95": 0.370,
+      "mean": 0.315
+    },
+    "llm": {
+      "p50": 0.709,
+      "p90": 4.479,
+      "p95": 15.641,
+      "mean": 2.345
+    },
+    "tts_ttfa": {
+      "p50": 0.287,
+      "p90": 0.312,
+      "p95": 0.379,
+      "mean": 0.282
+    },
+    "true_v2v": {
+      "p50": 3.881,
+      "p90": 16.532,
+      "p95": 18.108,
+      "mean": 5.404,
+      "min": 0.984,
+      "max": 18.108
+    }
+  },
+  "turns": [
+    {"turn": 1, "stt": 0.277, "llm": 0.709, "tts": 0.379, "true_v2v": 2.091},
+    {"turn": 4, "stt": 0.339, "llm": 0.356, "tts": 0.288, "true_v2v": 1.376},
+    {"turn": 6, "stt": 0.303, "llm": 0.287, "tts": 0.308, "true_v2v": 0.984},
+    {"turn": 7, "stt": 0.281, "llm": 0.476, "tts": 0.282, "true_v2v": 7.649},
+    {"turn": 9, "stt": 0.355, "llm": 0.076, "tts": 0.268, "true_v2v": 1.679},
+    {"turn": 12, "stt": 0.293, "llm": 2.421, "tts": 0.206, "true_v2v": 3.646},
+    {"turn": 15, "stt": 0.300, "llm": 6.458, "tts": 0.300, "true_v2v": 7.442},
+    {"turn": 22, "stt": 0.301, "llm": 0.256, "tts": 0.275, "true_v2v": 18.108},
+    {"turn": 23, "stt": 0.341, "llm": 0.321, "tts": 0.296, "true_v2v": 5.562},
+    {"turn": 24, "stt": 0.271, "llm": 0.391, "tts": 0.277, "true_v2v": 1.084},
+    {"turn": 27, "stt": 0.304, "llm": 1.259, "tts": 0.288, "true_v2v": 2.156},
+    {"turn": 28, "stt": 0.370, "llm": 3.645, "tts": 0.241, "true_v2v": 4.687},
+    {"turn": 32, "stt": 0.368, "llm": 4.479, "tts": 0.301, "true_v2v": 11.079},
+    {"turn": 36, "stt": 0.297, "llm": 3.252, "tts": 0.261, "true_v2v": 3.881},
+    {"turn": 37, "stt": 0.314, "llm": 0.306, "tts": 0.312, "true_v2v": 5.127},
+    {"turn": 39, "stt": 0.279, "llm": 0.342, "tts": 0.250, "true_v2v": 1.001},
+    {"turn": 40, "stt": 0.343, "llm": 1.536, "tts": 0.287, "true_v2v": 3.180},
+    {"turn": 42, "stt": 0.330, "llm": 15.641, "tts": 0.258, "true_v2v": 16.532}
+  ]
+}

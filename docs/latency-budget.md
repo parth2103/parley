@@ -66,17 +66,43 @@ Defined as timestamp of user speech end (Silero VAD stop) to timestamp of first 
 
 - **Waveform acoustic validation (n=3)**: Software True V2V = 0.819 s – 1.014 s; acoustic waveform gap = 0.950 s – 1.135 s (discrepancy average = 131.15 ms due to Cartesia leading silence in synthesized audio frames).
 
-## Tool-Call Turn Latency (End-to-End Turn Time)
+## Official Phase 1 C0 Baseline (RAG + Tools in Path, 2026-09-29)
 
-Replaces in-process microsecond execution metrics (which measure only in-memory dictionary lookup, 0.01–2.44 ms) with full turn duration from user prompt through LLM tool call, tool execution, and final spoken response generation.
+Captured across $n=18$ complete live voice turns (`logs/parley_2026-09-29T15-58-29-356068.log`, artifact: `eval/results/c0_rebaseline_20260929.json`) with Groq `openai/gpt-oss-120b`, Deepgram Nova-3, Cartesia Sonic-3.5, and both RAG (`HybridRetriever`) and tools (`policy_lookup`, `open_claim`, `schedule_callback`) active in the pipeline.
 
-- **Sample Size**: n=11 cases (10 tool calls + 1 missing-info clarification)
+| Config | STT p50 / p95 | LLM p50 / p95 | TTS p50 / p95 | True V2V p50 / p95 | Notes |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **C0 (Phase 1 Baseline)** | **0.304 s / 0.370 s** | **0.709 s / 15.641 s** | **0.287 s / 0.379 s** | **3.881 s / 18.108 s** | Groq gpt-oss-120b, Nova-3, Sonic-3.5, RAG + tools in path (n=18 complete turns, mean True V2V = 5.404 s) |
+
+*Observation: Bimodal distribution. Non-tool conversational queries execute at True V2V $\le 1.38\text{ s}$ (min = 0.984 s). Tail latency is driven by dual-LLM cloud queueing during tool calling (p95 = 15.641 s) and Smart Turn v3 silence evaluation holds during inter-clause pauses.*
+
+## Tool-Call Turn Latency (Harder Evaluation Suite, n=21)
+
+Measures full turn duration from user prompt through initial tool call, in-process execution, and follow-up spoken response generation across 21 test cases (including ambiguous intent, malformed IDs, multi-step requests, missing parameters, future dates, prompt injections, and invalid perils).
+
+- **Sample Size**: n=21 test cases (13 tool-calling turns, 8 clarification/refusal cases)
 - **Primary LLM**: Groq `openai/gpt-oss-120b` (Temperature: 0.0)
-- **Tool Selection Accuracy**: 1.0000 (11/11)
-- **Argument Extraction Accuracy**: 1.0000 (10/10)
-- **Missing-Info Clarification Accuracy**: 1.0000 (1/1)
-- **Turn Latency p50**: 837.1 ms (0.837 s)
-- **Turn Latency p90**: 10,966.8 ms (10.967 s) [max of n=11]
-- **Turn Latency p95**: 10,966.8 ms (10.967 s) [max of n=11]
-- **Turn Latency Mean**: 2,621.5 ms (2.622 s)
+- **Tool Selection Accuracy**: 0.9048 (19/21)
+- **Argument Extraction Accuracy**: 0.8462 (11/13 strict, 12/13 with phone number normalization)
+- **Missing-Info Clarification Accuracy**: 0.7500 (6/8)
+- **Tool Turn Latency (n=13 tool turns)**:
+  - **p50**: 6,285.6 ms (6.286 s)
+  - **p90**: 12,197.0 ms (12.197 s)
+  - **p95**: 14,408.0 ms (14.408 s)
+  - **Mean**: 6,825.7 ms (6.826 s)
+  - *In-process execution latency remains deterministic and negligible: p50 = 0.03 ms, p95 = 0.36 ms.*
+
+## Cost Arithmetic (Measured n=105, 2026-09-28)
+
+Calculated from exact prompt and completion token counts on the paired discriminative benchmark ($N=105$ queries per model). Rates from official provider pricing (accessed 2026-09-28: Groq $0.15/$0.60 per 1M; Anthropic $3.00/$15.00 per 1M).
+
+| Metric | Groq (`openai/gpt-oss-120b`) | Claude Sonnet 4.6 (`claude-sonnet-4-6`) | Ratio (Claude / Groq) |
+| :--- | :--- | :--- | :--- |
+| **Mean Prompt Tokens** | 414.63 | 404.20 | 0.97x |
+| **Mean Completion Tokens** | 121.77 | 71.62 | 0.59x |
+| **Cost per Turn** | **$0.00013526** (0.0135¢) | **$0.00228690** (0.2287¢) | **16.91x** |
+| **Cost per 1,000 Queries** | **$0.1353** | **$2.2869** | **16.91x** |
+| **With Prompt Caching (est.)** | $0.1353 / 1k | ~$1.341 / 1k | ~9.9x |
+
+*Voice Infrastructure Context: High-quality neural TTS (Cartesia Sonic at $0.075/1k chars, ~$0.020/turn) dominates unit economics over LLM costs, making the LLM choice a <10% delta in total session cost.*
 
